@@ -86,7 +86,7 @@ jobs:
 
           # Add and fetch the target repository
           echo "Adding remote repository"
-          git remote add target_repo https://x-access-token:${{ secrets.MY_SECRET_KEYS }}@github.com/manishabheemanpally/deployrepo.git
+          git remote add target_repo "https://x-access-token:${{ secrets.MY_SECRET_KEYS }}@github.com/manishabheemanpally/deployrepo.git"
           
           # Debug: List remotes to check if the remote was added correctly
           git remote -v
