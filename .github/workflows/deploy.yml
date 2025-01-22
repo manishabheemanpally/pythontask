@@ -75,31 +75,31 @@ jobs:
           git config --global user.email "manishabheemanpally@gmail.com"
           git config --global user.name "manishabheemanpally"
 
-          # Construct the remote URL directly and ensure no newlines or spaces are included
+          # Define the target repository URL
           REMOTE_URL="https://x-access-token:${{ secrets.MY_SECRET_KEYS }}@github.com/manishabheemanpally/deployrepo.git"
-          
-          echo "Setting remote URL"
+
+          echo "Setting up target repository remote"
           git remote add target_repo "$REMOTE_URL"
-          
-          # List remotes to check if the remote was added correctly
+
+          # List remotes to verify
           git remote -v
-          
-          echo "Fetching target repository"
+
+          echo "Fetching from target repository"
           git fetch target_repo || { echo 'Fetch failed'; exit 1; }
 
-          # Ensure the target branch exists and checkout
+          # Ensure the target branch exists, or create it
           if git ls-remote --heads target_repo mainbranch | grep -q "refs/heads/mainbranch"; then
-            echo "Checking out existing branch mainbranch"
+            echo "Branch mainbranch exists. Checking out."
             git checkout mainbranch || { echo 'Checkout failed'; exit 1; }
+            git pull target_repo mainbranch || { echo 'Pull failed'; exit 1; }
           else
-            echo "Creating new branch mainbranch"
+            echo "Branch mainbranch does not exist. Creating new branch."
             git checkout -b mainbranch || { echo 'Branch creation failed'; exit 1; }
           fi
 
-          # Merge changes from main branch
           echo "Merging changes from origin/main"
           git merge origin/main --no-ff --no-edit || { echo 'Merge failed'; exit 1; }
 
-          # Push changes to the target repository
           echo "Pushing changes to target repository"
           git push target_repo mainbranch || { echo 'Push failed'; exit 1; }
+
