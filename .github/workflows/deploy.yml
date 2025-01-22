@@ -71,7 +71,7 @@ jobs:
       - name: Debug Environment Variables
         run: |
           echo "Checking environment variables"
-          echo "GH_PAT: $GH_PAT"
+          echo "GH_PAT: ${{ secrets.MY_SECRET_KEYS }}"
           echo "GITHUB_ACTOR: $GITHUB_ACTOR"
           echo "GITHUB_REPOSITORY: $GITHUB_REPOSITORY"
 
@@ -83,18 +83,25 @@ jobs:
           git config --global user.name "manishabheemanpally"
 
           # Add and fetch the target repository
+          echo "Adding remote repository"
           git remote add target_repo https://x-access-token:${{ secrets.MY_SECRET_KEYS }}@github.com/manishabheemanpally/deployrepo.git
+          
+          echo "Fetching target repository"
           git fetch target_repo
 
           # Ensure the target branch exists and checkout
           if git ls-remote --heads target_repo mainbranch | grep mainbranch; then
-            git checkout mainbranch || git checkout -b mainbranch
+            echo "Checking out existing branch mainbranch"
+            git checkout mainbranch
           else
+            echo "Creating new branch mainbranch"
             git checkout -b mainbranch
           fi
 
           # Merge changes from main branch
+          echo "Merging changes from origin/main"
           git merge origin/main --no-ff --no-edit
 
           # Push changes to the target repository
+          echo "Pushing changes to target repository"
           git push https://x-access-token:${{ secrets.MY_SECRET_KEYS }}@github.com/manishabheemanpally/deployrepo.git mainbranch
