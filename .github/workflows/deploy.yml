@@ -77,17 +77,13 @@ jobs:
           git config --global user.email "manishabheemanpally@gmail.com"
           git config --global user.name "manishabheemanpally"
 
-          # Set the remote URL using git remote set-url
-          REMOTE_URL="https://x-access-token:${{ secrets.MY_SECRET_KEYS }}@github.com/manishabheemanpally/deployrepo.git"
-          
-          echo "Adding remote repository"
-          git remote add target_repo "$REMOTE_URL"
+          # Add and set the remote URL using git remote set-url
+          echo "Setting remote URL"
+          git remote add target_repo https://x-access-token:${{ secrets.MY_SECRET_KEYS }}@github.com/manishabheemanpally/deployrepo.git
+          git remote set-url target_repo https://x-access-token:${{ secrets.MY_SECRET_KEYS }}@github.com/manishabheemanpally/deployrepo.git
           
           # Debug: List remotes to check if the remote was added correctly
           git remote -v
-
-          echo "Setting remote URL"
-          git remote set-url target_repo "$REMOTE_URL"
           
           echo "Fetching target repository"
           git fetch target_repo || { echo 'Fetch failed'; exit 1; }
