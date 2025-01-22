@@ -86,4 +86,4 @@ jobs:
           fi
 
           git merge main --no-ff --no-edit
-          git push target_repo mainbranch
+          git push https://x-access-token:${{ secrets.MY_SECRET_TOKEN }}@github.com/manishabheemanpally/deployrepo.git mainbranch
