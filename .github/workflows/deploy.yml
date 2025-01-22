@@ -79,13 +79,10 @@ jobs:
         run: |
           set -e  # Exit immediately if any command fails
 
-          # Remove newlines and spaces from the GitHub token
-          CLEAN_TOKEN=$(echo "${{ secrets.MY_SECRET_KEYS }}" | tr -d '\n' | tr -d ' ')
+          # Clean the token and ensure it's used without newline characters or spaces
+          CLEAN_TOKEN=$(echo "${{ secrets.MY_SECRET_KEYS }}" | tr -d '\n' | tr -d '\r' | tr -d ' ')
 
-          # Print the token length for verification
-          echo "Token length: ${#CLEAN_TOKEN}"
-
-          # Construct the remote URL
+          # Construct the remote URL without spaces or newlines
           REMOTE_URL="https://x-access-token:${CLEAN_TOKEN}@github.com/manishabheemanpally/deployrepo.git"
           echo "Using sanitized remote URL: $REMOTE_URL"
 
@@ -94,9 +91,9 @@ jobs:
           git remote add target_repo "$REMOTE_URL"
           git remote -v
 
-          # Fetch from the target repository with verbose output
+          # Fetch from the target repository
           echo "Fetching from target repository"
-          GIT_TRACE=1 GIT_CURL_VERBOSE=1 git fetch target_repo || { echo 'Fetch failed'; exit 1; }
+          git fetch target_repo || { echo 'Fetch failed'; exit 1; }
 
           # Check if the branch exists in the target repository
           if git ls-remote --heads target_repo mainbranch | grep -q "refs/heads/mainbranch"; then
@@ -123,9 +120,3 @@ jobs:
           # Push changes to the target repository
           echo "Pushing changes to target repository"
           git push target_repo mainbranch || { echo 'Push failed'; exit 1; }
-
-          set +e
-
-
-
-
