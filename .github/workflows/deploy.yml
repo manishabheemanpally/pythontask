@@ -65,6 +65,13 @@ jobs:
 
           git remote add target_repo https://x-access-token:${{ secrets.MY_SECRET_TOKEN }}@github.com/manishabheemanpally/deployrepo.git
           git fetch target_repo
-          git checkout -b main target_repo/main
+
+          # Ensure the target branch exists
+          if git show-ref --quiet refs/heads/mainbranch; then
+            git checkout mainbranch
+          else
+            git checkout -b mainbranch
+          fi
+
           git merge main --no-ff --no-edit
-          git push target_repo main
+          git push target_repo mainbranch
