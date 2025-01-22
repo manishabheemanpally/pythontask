@@ -26,19 +26,22 @@ jobs:
           GH_PAT: ${{ secrets.MY_SECRET_KEYS }}
         run: |
           set -e
+
+          # Ensure no newlines or spaces in the token
+          CLEAN_TOKEN=$(echo "${{ secrets.MY_SECRET_KEYS }}" | tr -d '\n' | tr -d '\r')
           
-          # Cleanly construct the remote repository URL
-          REMOTE_URL="https://x-access-token:${{ secrets.MY_SECRET_KEYS }}@github.com/manishabheemanpally/deployrepo.git"
+          # Construct the remote repository URL
+          REMOTE_URL="https://x-access-token:${CLEAN_TOKEN}@github.com/manishabheemanpally/deployrepo.git"
           echo "Using remote URL: $REMOTE_URL"
-          
+
           # Set up the remote repository
           echo "Setting up target repository remote"
           git remote add target_repo "$REMOTE_URL"
           git remote -v
-          
+
           # Fetch from the target repository
           echo "Fetching from target repository"
-          git fetch target_repo
+          git fetch target_repo || { echo 'Fetch failed'; exit 1; }
 
           # Check if the branch exists in the target repository
           if git ls-remote --heads target_repo mainbranch | grep -q "refs/heads/mainbranch"; then
@@ -51,24 +54,20 @@ jobs:
 
           # Merge changes from origin/main
           echo "Merging changes from origin/main"
-          if ! git merge origin/main --no-ff --no-edit; then
-            echo "Merge conflict detected. Attempting to resolve..."
-            
-            # Attempt automatic conflict resolution
+          git merge origin/main --no-ff --no-edit || {
+            echo "Merge conflict detected. Resolving automatically..."
             git merge --strategy-option=theirs || {
               echo "Automatic conflict resolution failed. Aborting merge."
               git merge --abort
               exit 1
             }
-
-            echo "Conflicts resolved. Proceeding with commit."
             git add .
-            git commit -m "Resolved merge conflicts from origin/main"
-          fi
+            git commit -m "Resolved merge conflicts"
+          }
 
           # Push changes to the target repository
           echo "Pushing changes to target repository"
-          git push target_repo mainbranch
+          git push target_repo mainbranch || { echo 'Push failed'; exit 1; }
 
 
 
