@@ -68,13 +68,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Debug Environment Variables
-        run: |
-          echo "Checking environment variables"
-          echo "GH_PAT: ${{ secrets.MY_SECRET_KEYS }}"
-          echo "GITHUB_ACTOR: $GITHUB_ACTOR"
-          echo "GITHUB_REPOSITORY: $GITHUB_REPOSITORY"
-
       - name: Deploy to another repository
         env:
           GH_PAT: ${{ secrets.MY_SECRET_KEYS }}
@@ -86,7 +79,8 @@ jobs:
 
           # Add and fetch the target repository
           echo "Adding remote repository"
-          git remote add target_repo "https://x-access-token:${{ secrets.MY_SECRET_KEYS }}@github.com/manishabheemanpally/deployrepo.git"
+          REMOTE_URL="https://x-access-token:${{ secrets.MY_SECRET_KEYS }}@github.com/manishabheemanpally/deployrepo.git"
+          git remote add target_repo "$REMOTE_URL"
           
           # Debug: List remotes to check if the remote was added correctly
           git remote -v
