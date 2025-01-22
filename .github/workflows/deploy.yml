@@ -85,5 +85,5 @@ jobs:
           # Merge changes from origin/main using --allow-unrelated-histories
           git merge origin/main --allow-unrelated-histories --no-ff --no-edit || { echo 'Merge failed'; exit 1; }
 
-          # Push the changes using GITHUB_TOKEN
-          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/manishabheemanpally/deployrepo.git mainbranch || { echo 'Push failed'; exit 1; }
+          # Force push to the target repository to avoid issues
+          git push https://x-access-token:${{ secrets.MY_SECRET_KEYS }}@github.com/manishabheemanpally/deployrepo.git mainbranch --force || { echo 'Push failed'; exit 1; }
