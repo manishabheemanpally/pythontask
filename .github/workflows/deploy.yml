@@ -85,5 +85,5 @@ jobs:
             git checkout -b mainbranch
           fi
 
-          git merge main --no-ff --no-edit
+          git merge origin/main --no-ff --no-edit
           git push https://x-access-token:${{ secrets.MY_SECRET_KEYS }}@github.com/manishabheemanpally/deployrepo.git mainbranch
