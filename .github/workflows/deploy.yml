@@ -55,10 +55,8 @@ jobs:
 
       - name: Push new version tag
         if: env.new_version != ''
-        env:
-          GH_PAT: ${{ secrets.MY_SECRET_KEYS }}
         run: |
-          git push https://x-access-token:${{ secrets.MY_SECRET_KEYS }}@github.com/manishabheemanpally/pythontask.git ${{ env.new_version }}
+          git push origin ${{ env.new_version }}
 
   deploy:
     needs: build
@@ -74,49 +72,18 @@ jobs:
           git config --global user.name "manishabheemanpally"
 
       - name: Deploy to another repository
-        env:
-          GH_PAT: ${{ secrets.MY_SECRET_KEYS }}
         run: |
           set -e  # Exit immediately if any command fails
 
-          # Clean the token and ensure it's used without newline characters or spaces
-          CLEAN_TOKEN=$(echo "${{ secrets.MY_SECRET_KEYS }}" | tr -d '\n' | tr -d '\r' | tr -d ' ')
-
-          # Construct the remote URL without spaces or newlines
-          REMOTE_URL="https://x-access-token:${CLEAN_TOKEN}@github.com/manishabheemanpally/deployrepo.git"
-          echo "Using sanitized remote URL: $REMOTE_URL"
-
-          # Add the target repository as a remote
-          echo "Setting up target repository remote"
-          git remote add target_repo "$REMOTE_URL"
-          git remote -v
-
-          # Fetch from the target repository
-          echo "Fetching from target repository"
+          # Fetch the latest changes from the target repository
+          git remote add target_repo https://github.com/manishabheemanpally/deployrepo.git
           git fetch target_repo || { echo 'Fetch failed'; exit 1; }
 
-          # Check if the branch exists in the target repository
-          if git ls-remote --heads target_repo mainbranch | grep -q "refs/heads/mainbranch"; then
-            echo "Checking out existing branch mainbranch"
-            git checkout mainbranch
-          else
-            echo "Creating new branch mainbranch"
-            git checkout -b mainbranch
-          fi
+          # Checkout or create the target branch
+          git checkout -b mainbranch target_repo/mainbranch || git checkout mainbranch
 
           # Merge changes from origin/main using --allow-unrelated-histories
-          echo "Merging changes from origin/main"
-          git merge origin/main --allow-unrelated-histories --no-ff --no-edit || {
-            echo "Merge conflict detected. Attempting to resolve..."
-            git merge --strategy-option=theirs || {
-              echo "Automatic conflict resolution failed. Aborting merge."
-              git merge --abort
-              exit 1
-            }
-            git add .
-            git commit -m "Resolved merge conflicts"
-          }
+          git merge origin/main --allow-unrelated-histories --no-ff --no-edit || { echo 'Merge failed'; exit 1; }
 
-          # Push changes to the target repository
-          echo "Pushing changes to target repository"
-          git push target_repo mainbranch || { echo 'Push failed'; exit 1; }
+          # Push the changes using GITHUB_TOKEN
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/manishabheemanpally/deployrepo.git mainbranch || { echo 'Push failed'; exit 1; }
