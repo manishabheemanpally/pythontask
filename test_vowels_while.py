@@ -1,5 +1,5 @@
 import unittest
-from vowels_while import count_vowels  # Make sure the import path is correct
+from vowels while import count_vowels  # Make sure the import path is correct
 
 class TestCountVowels(unittest.TestCase):
     def test_empty_string(self):
