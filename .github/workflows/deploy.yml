@@ -77,7 +77,7 @@ jobs:
           git config --global user.email "manishabheemanpally@gmail.com"
           git config --global user.name "manishabheemanpally"
 
-          # Construct the remote URL
+          # Set the remote URL as an environment variable
           REMOTE_URL="https://x-access-token:${{ secrets.MY_SECRET_KEYS }}@github.com/manishabheemanpally/deployrepo.git"
           
           echo "Adding remote repository"
