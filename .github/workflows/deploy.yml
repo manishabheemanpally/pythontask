@@ -72,8 +72,6 @@ jobs:
         env:
           GH_PAT: ${{ secrets.MY_SECRET_KEYS }}
         run: |
-          set -x  # Turn on debugging
-
           git config --global user.email "manishabheemanpally@gmail.com"
           git config --global user.name "manishabheemanpally"
 
@@ -81,16 +79,16 @@ jobs:
           REMOTE_URL="https://x-access-token:${{ secrets.MY_SECRET_KEYS }}@github.com/manishabheemanpally/deployrepo.git"
           
           echo "Setting remote URL"
-          git remote add target_repo "${REMOTE_URL}"
+          git remote add target_repo "$REMOTE_URL"
           
-          # Debug: List remotes to check if the remote was added correctly
+          # List remotes to check if the remote was added correctly
           git remote -v
           
           echo "Fetching target repository"
           git fetch target_repo || { echo 'Fetch failed'; exit 1; }
 
           # Ensure the target branch exists and checkout
-          if git ls-remote --heads target_repo mainbranch | grep mainbranch; then
+          if git ls-remote --heads target_repo mainbranch | grep -q "refs/heads/mainbranch"; then
             echo "Checking out existing branch mainbranch"
             git checkout mainbranch || { echo 'Checkout failed'; exit 1; }
           else
@@ -105,6 +103,4 @@ jobs:
           # Push changes to the target repository
           echo "Pushing changes to target repository"
           git push target_repo mainbranch || { echo 'Push failed'; exit 1; }
-
-          set +x  # Turn off debugging
 
