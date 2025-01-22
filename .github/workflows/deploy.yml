@@ -80,7 +80,7 @@ jobs:
           git fetch target_repo
 
           # Ensure the target branch exists and checkout
-          if git ls-remote --heads target_repo mainbranch | grep mainbranch; then
+          if git rev-parse --verify mainbranch; then
             git checkout mainbranch
           else
             git checkout -b mainbranch
@@ -90,4 +90,4 @@ jobs:
           git merge origin/main --no-ff --no-edit
 
           # Push changes to the target repository
-          git push https://x-access-token:${{ secrets.MY_SECRET_KEYS }}@github.com/manishabheemanpally/deployrepo.git mainbranch
+          git push target_repo mainbranch
