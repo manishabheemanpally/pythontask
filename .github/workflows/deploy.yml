@@ -75,19 +75,22 @@ jobs:
           git config --global user.email "manishabheemanpally@gmail.com"
           git config --global user.name "manishabheemanpally"
 
-          # Define the target repository URL
+          # Define the target repository URL correctly
           REMOTE_URL="https://x-access-token:${{ secrets.MY_SECRET_KEYS }}@github.com/manishabheemanpally/deployrepo.git"
+
+          # Ensure no newlines or extra spaces in the URL
+          REMOTE_URL=$(echo "$REMOTE_URL" | tr -d '\n' | tr -d '\r')
 
           echo "Setting up target repository remote"
           git remote add target_repo "$REMOTE_URL"
 
-          # List remotes to verify
+          # Verify the remotes
           git remote -v
 
           echo "Fetching from target repository"
           git fetch target_repo || { echo 'Fetch failed'; exit 1; }
 
-          # Ensure the target branch exists, or create it
+          # Ensure the target branch exists or create it
           if git ls-remote --heads target_repo mainbranch | grep -q "refs/heads/mainbranch"; then
             echo "Branch mainbranch exists. Checking out."
             git checkout mainbranch || { echo 'Checkout failed'; exit 1; }
@@ -102,4 +105,3 @@ jobs:
 
           echo "Pushing changes to target repository"
           git push target_repo mainbranch || { echo 'Push failed'; exit 1; }
-
