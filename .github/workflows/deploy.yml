@@ -86,22 +86,25 @@ jobs:
           echo "Adding remote repository"
           git remote add target_repo https://x-access-token:${{ secrets.MY_SECRET_KEYS }}@github.com/manishabheemanpally/deployrepo.git
           
+          # Debug: List remotes to check if the remote was added correctly
+          git remote -v
+          
           echo "Fetching target repository"
-          git fetch target_repo
+          git fetch target_repo || { echo 'Fetch failed'; exit 1; }
 
           # Ensure the target branch exists and checkout
           if git ls-remote --heads target_repo mainbranch | grep mainbranch; then
             echo "Checking out existing branch mainbranch"
-            git checkout mainbranch || git checkout -b mainbranch
+            git checkout mainbranch || { echo 'Checkout failed'; exit 1; }
           else
             echo "Creating new branch mainbranch"
-            git checkout -b mainbranch
+            git checkout -b mainbranch || { echo 'Branch creation failed'; exit 1; }
           fi
 
           # Merge changes from main branch
           echo "Merging changes from origin/main"
-          git merge origin/main --no-ff --no-edit
+          git merge origin/main --no-ff --no-edit || { echo 'Merge failed'; exit 1; }
 
           # Push changes to the target repository
           echo "Pushing changes to target repository"
-          git push https://x-access-token:${{ secrets.MY_SECRET_KEYS }}@github.com/manishabheemanpally/deployrepo.git mainbranch
+          git push target_repo mainbranch || { echo 'Push failed'; exit 1; }
