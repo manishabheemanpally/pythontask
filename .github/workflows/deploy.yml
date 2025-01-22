@@ -77,11 +77,11 @@ jobs:
           git config --global user.email "manishabheemanpally@gmail.com"
           git config --global user.name "manishabheemanpally"
 
-          # Properly construct and set the remote URL
+          # Construct the remote URL directly and ensure no newlines or spaces are included
           REMOTE_URL="https://x-access-token:${{ secrets.MY_SECRET_KEYS }}@github.com/manishabheemanpally/deployrepo.git"
           
           echo "Setting remote URL"
-          git remote add target_repo "$REMOTE_URL"
+          git remote add target_repo "${REMOTE_URL}"
           
           # Debug: List remotes to check if the remote was added correctly
           git remote -v
@@ -107,5 +107,4 @@ jobs:
           git push target_repo mainbranch || { echo 'Push failed'; exit 1; }
 
           set +x  # Turn off debugging
-
 
