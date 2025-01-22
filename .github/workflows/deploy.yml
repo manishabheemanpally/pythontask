@@ -9,102 +9,60 @@ on:
       - main
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.x'
-
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-
-      - name: Run tests
-        run: pytest
-
-      - name: Bump version and push tag
-        id: version
+      - name: Set up Git
         run: |
           git config --global user.email "manishabheemanpally@gmail.com"
           git config --global user.name "manishabheemanpally"
-
-          # Fetch tags from the remote repository
-          git fetch --tags
-
-          # Get the current version tag
-          current_version=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-          echo "Current version: $current_version"
-
-          # Calculate the new version tag
-          new_version=$(echo $current_version | awk -F. -v OFS=. '{$NF++;print}')
-          echo "New version: $new_version"
-
-          # Check if the new version tag already exists in the remote repository
-          if git rev-parse "refs/tags/$new_version" >/dev/null 2>&1; then
-            echo "Tag $new_version already exists. Skipping tag creation."
-            echo "new_version=" >> $GITHUB_ENV
-          else
-            git tag $new_version
-            echo "new_version=$new_version" >> $GITHUB_ENV
-          fi
-
-      - name: Push new version tag
-        if: env.new_version != ''
-        env:
-          GH_PAT: ${{ secrets.MY_SECRET_KEYS }}
-        run: |
-          git push https://x-access-token:${{ secrets.MY_SECRET_KEYS }}@github.com/manishabheemanpally/pythontask.git ${{ env.new_version }}
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
 
       - name: Deploy to another repository
         env:
           GH_PAT: ${{ secrets.MY_SECRET_KEYS }}
         run: |
-          git config --global user.email "manishabheemanpally@gmail.com"
-          git config --global user.name "manishabheemanpally"
+          set -e
 
-          # Construct the remote URL safely
+          # Define the remote repository URL
           REMOTE_URL="https://x-access-token:${{ secrets.MY_SECRET_KEYS }}@github.com/manishabheemanpally/deployrepo.git"
-          CLEANED_REMOTE_URL=$(echo "$REMOTE_URL" | tr -d '\n\r' | sed 's/[[:space:]]//g')
 
-          echo "Using remote URL: $CLEANED_REMOTE_URL"
-
-          # Configure the target repository
           echo "Setting up target repository remote"
-          git remote add target_repo "$CLEANED_REMOTE_URL" || git remote set-url target_repo "$CLEANED_REMOTE_URL"
+          git remote add target_repo "$REMOTE_URL"
+          git fetch target_repo
 
-          git remote -v
-
-          echo "Fetching from target repository"
-          git fetch target_repo || { echo 'Fetch failed'; exit 1; }
-
-          # Check and checkout the target branch
+          # Check if mainbranch exists in target_repo
           if git ls-remote --heads target_repo mainbranch | grep -q "refs/heads/mainbranch"; then
             echo "Checking out existing branch mainbranch"
-            git checkout mainbranch || { echo 'Checkout failed'; exit 1; }
-            git pull target_repo mainbranch || { echo 'Pull failed'; exit 1; }
+            git checkout mainbranch
           else
             echo "Creating new branch mainbranch"
-            git checkout -b mainbranch || { echo 'Branch creation failed'; exit 1; }
+            git checkout -b mainbranch
           fi
 
-          # Merge changes from main branch
           echo "Merging changes from origin/main"
-          git merge origin/main --no-ff --no-edit --allow-unrelated-histories || { echo 'Merge failed'; exit 1; }
+          if ! git merge origin/main --no-ff --no-edit; then
+            echo "Merge conflict detected. Attempting to resolve..."
+            
+            # Resolve conflicts by choosing "theirs" (origin/main)
+            git merge --strategy-option=theirs || {
+              echo "Automatic conflict resolution failed."
+              git merge --abort
+              exit 1
+            }
 
-          # Push changes to the target repository
+            echo "Conflicts resolved. Proceeding with commit."
+            git add .
+            git commit -m "Resolved merge conflicts from origin/main"
+          fi
+
           echo "Pushing changes to target repository"
-          git push target_repo mainbranch || { echo 'Push failed'; exit 1; }
+          git push target_repo mainbranch || {
+            echo "Push failed."
+            exit 1
+          }
+
 
