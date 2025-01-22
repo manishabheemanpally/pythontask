@@ -92,7 +92,7 @@ jobs:
           # Ensure the target branch exists and checkout
           if git ls-remote --heads target_repo mainbranch | grep mainbranch; then
             echo "Checking out existing branch mainbranch"
-            git checkout mainbranch
+            git checkout mainbranch || git checkout -b mainbranch
           else
             echo "Creating new branch mainbranch"
             git checkout -b mainbranch
