@@ -75,9 +75,6 @@ jobs:
 
           REMOTE_URL="https://x-access-token:${{ secrets.MY_SECRET_KEYS }}@github.com/manishabheemanpally/deployrepo.git"
           
-          echo "Removing existing remote repository"
-          git remote remove target_repo
-          
           echo "Adding remote repository"
           git remote add target_repo "$REMOTE_URL"
           
@@ -101,4 +98,5 @@ jobs:
           git push target_repo mainbranch || { echo 'Push failed'; exit 1; }
 
           set +x
+
 
