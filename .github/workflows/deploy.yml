@@ -39,8 +39,9 @@ jobs:
           new_version=$(echo $current_version | awk -F. -v OFS=. '{$NF++;print}')
           echo "New version: $new_version"
 
-          if git rev-parse "$new_version" >/dev/null 2>&1; then
+          if git rev-parse "refs/tags/$new_version" >/dev/null 2>&1; then
             echo "Tag $new_version already exists. Skipping tag creation."
+            echo "new_version=" >> $GITHUB_ENV
           else
             git tag $new_version
             echo "new_version=$new_version" >> $GITHUB_ENV
