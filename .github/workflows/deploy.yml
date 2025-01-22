@@ -9,7 +9,59 @@ on:
       - main
 
 jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run tests
+        run: pytest
+
+      - name: Bump version and push tag
+        id: version
+        run: |
+          git config --global user.email "manishabheemanpally@gmail.com"
+          git config --global user.name "manishabheemanpally"
+
+          # Fetch tags from the remote repository
+          git fetch --tags
+
+          # Get the current version tag
+          current_version=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          echo "Current version: $current_version"
+
+          # Calculate the new version tag
+          new_version=$(echo $current_version | awk -F. -v OFS=. '{$NF++;print}')
+          echo "New version: $new_version"
+
+          # Check if the new version tag already exists in the remote repository
+          if git rev-parse "refs/tags/$new_version" >/dev/null 2>&1; then
+            echo "Tag $new_version already exists. Skipping tag creation."
+            echo "new_version=" >> $GITHUB_ENV
+          else
+            git tag $new_version
+            echo "new_version=$new_version" >> $GITHUB_ENV
+          fi
+
+      - name: Push new version tag
+        if: env.new_version != ''
+        env:
+          GH_PAT: ${{ secrets.MY_SECRET_KEYS }}
+        run: |
+          git push https://x-access-token:${{ secrets.MY_SECRET_KEYS }}@github.com/manishabheemanpally/pythontask.git ${{ env.new_version }}
+
   deploy:
+    needs: build
     runs-on: ubuntu-latest
 
     steps:
@@ -25,16 +77,16 @@ jobs:
         env:
           GH_PAT: ${{ secrets.MY_SECRET_KEYS }}
         run: |
-          set -e
+          set -e  # Exit immediately if any command fails
 
-          # Ensure no newlines or spaces in the token
+          # Remove newlines and spaces from the GitHub token
           CLEAN_TOKEN=$(echo "${{ secrets.MY_SECRET_KEYS }}" | tr -d '\n' | tr -d '\r')
-          
-          # Construct the remote repository URL
-          REMOTE_URL="https://x-access-token:${CLEAN_TOKEN}@github.com/manishabheemanpally/deployrepo.git"
-          echo "Using remote URL: $REMOTE_URL"
 
-          # Set up the remote repository
+          # Construct the remote URL
+          REMOTE_URL="https://x-access-token:${CLEAN_TOKEN}@github.com/manishabheemanpally/deployrepo.git"
+          echo "Using sanitized remote URL: $REMOTE_URL"
+
+          # Add the target repository as a remote
           echo "Setting up target repository remote"
           git remote add target_repo "$REMOTE_URL"
           git remote -v
@@ -55,7 +107,7 @@ jobs:
           # Merge changes from origin/main
           echo "Merging changes from origin/main"
           git merge origin/main --no-ff --no-edit || {
-            echo "Merge conflict detected. Resolving automatically..."
+            echo "Merge conflict detected. Attempting to resolve..."
             git merge --strategy-option=theirs || {
               echo "Automatic conflict resolution failed. Aborting merge."
               git merge --abort
