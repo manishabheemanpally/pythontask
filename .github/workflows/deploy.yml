@@ -56,9 +56,9 @@ jobs:
       - name: Push new version tag
         if: env.new_version != ''
         env:
-          GH_PAT: ${{ secrets.MY_SECRET_TOKEN }}
+          GH_PAT: ${{ secrets.MY_SECRET_KEYS }}
         run: |
-          git push https://x-access-token:${{ secrets.MY_SECRET_TOKEN }}@github.com/manishabheemanpally/pythontask.git ${{ env.new_version }}
+          git push https://x-access-token:${{ secrets.MY_SECRET_KEYS }}@github.com/manishabheemanpally/pythontask.git ${{ env.new_version }}
 
   deploy:
     needs: build
@@ -70,12 +70,12 @@ jobs:
 
       - name: Deploy to another repository
         env:
-          GH_PAT: ${{ secrets.MY_SECRET_TOKEN }}
+          GH_PAT: ${{ secrets.MY_SECRET_KEYS }}
         run: |
           git config --global user.email "manishabheemanpally@gmail.com"
           git config --global user.name "manishabheemanpally"
 
-          git remote add target_repo https://x-access-token:${{ secrets.MY_SECRET_TOKEN }}@github.com/manishabheemanpally/deployrepo.git
+          git remote add target_repo https://x-access-token:${{ secrets.MY_SECRET_KEYS }}@github.com/manishabheemanpally/deployrepo.git
           git fetch target_repo
 
           # Ensure the target branch exists
@@ -86,4 +86,4 @@ jobs:
           fi
 
           git merge main --no-ff --no-edit
-          git push https://x-access-token:${{ secrets.MY_SECRET_TOKEN }}@github.com/manishabheemanpally/deployrepo.git mainbranch
+          git push https://x-access-token:${{ secrets.MY_SECRET_KEYS }}@github.com/manishabheemanpally/deployrepo.git mainbranch
