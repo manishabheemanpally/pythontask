@@ -77,8 +77,8 @@ jobs:
           git config --global user.email "manishabheemanpally@gmail.com"
           git config --global user.name "manishabheemanpally"
 
-          # Set the remote URL using printf to ensure it's formatted correctly
-          REMOTE_URL=$(printf "https://x-access-token:%s@github.com/manishabheemanpally/deployrepo.git" "${{ secrets.MY_SECRET_KEYS }}")
+          # Construct the remote URL directly
+          REMOTE_URL="https://x-access-token:${{ secrets.MY_SECRET_KEYS }}@github.com/manishabheemanpally/deployrepo.git"
           
           echo "Setting remote URL"
           git remote add target_repo "$REMOTE_URL"
