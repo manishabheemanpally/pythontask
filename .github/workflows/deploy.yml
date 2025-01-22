@@ -39,10 +39,15 @@ jobs:
           new_version=$(echo $current_version | awk -F. -v OFS=. '{$NF++;print}')
           echo "New version: $new_version"
 
-          git tag $new_version
-          echo "new_version=$new_version" >> $GITHUB_ENV
+          if git rev-parse "$new_version" >/dev/null 2>&1; then
+            echo "Tag $new_version already exists. Skipping tag creation."
+          else
+            git tag $new_version
+            echo "new_version=$new_version" >> $GITHUB_ENV
+          fi
 
       - name: Push new version tag
+        if: env.new_version != ''
         env:
           GH_PAT: ${{ secrets.MY_SECRET_TOKEN }}
         run: |
