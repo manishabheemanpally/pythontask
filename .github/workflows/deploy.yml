@@ -56,9 +56,9 @@ jobs:
       - name: Push new version tag
         if: env.new_version != ''
         env:
-          GH_PAT: ${{ secrets.GITHUB_TOKEN }}
+          GH_PAT: ${{ secrets.MY_SECRET }}
         run: |
-          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/manishabheemanpally/pythontask.git ${{ env.new_version }}
+          git push https://x-access-token:${{ secrets.MY_SECRET }}@github.com/manishabheemanpally/pythontask.git ${{ env.new_version }}
 
   deploy:
     needs: build
@@ -75,12 +75,12 @@ jobs:
 
       - name: Deploy to another repository
         env:
-          GH_PAT: ${{ secrets.GITHUB_TOKEN }}
+          GH_PAT: ${{ secrets.MY_SECRET }}
         run: |
           set -e  # Exit immediately if any command fails
 
           # Remove newlines and spaces from the GitHub token
-          CLEAN_TOKEN=$(echo "${{ secrets.GITHUB_TOKEN }}" | tr -d '\n' | tr -d '\r')
+          CLEAN_TOKEN=$(echo "${{ secrets.MY_SECRET }}" | tr -d '\n' | tr -d '\r')
 
           # Construct the remote URL
           REMOTE_URL="https://x-access-token:${CLEAN_TOKEN}@github.com/manishabheemanpally/deployrepo.git"
@@ -108,9 +108,7 @@ jobs:
           echo "Merging changes from origin/main"
           git merge origin/main --allow-unrelated-histories --no-ff --no-edit || { echo 'Merge failed'; exit 1; }
 
-          # Push changes to the target repository
+          # Push changes to the target repository using the token for authentication
           echo "Pushing changes to target repository"
           git push "$REMOTE_URL" mainbranch --force || { echo 'Push failed'; exit 1; }
 
-
-       
