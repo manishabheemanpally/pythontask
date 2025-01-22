@@ -33,18 +33,14 @@ jobs:
           git config --global user.email "manishabheemanpally@gmail.com"
           git config --global user.name "manishabheemanpally"
 
-          # Fetch tags from the remote repository
           git fetch --tags
 
-          # Get the current version tag
           current_version=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
           echo "Current version: $current_version"
 
-          # Calculate the new version tag
           new_version=$(echo $current_version | awk -F. -v OFS=. '{$NF++;print}')
           echo "New version: $new_version"
 
-          # Check if the new version tag already exists in the remote repository
           if git rev-parse "refs/tags/$new_version" >/dev/null 2>&1; then
             echo "Tag $new_version already exists. Skipping tag creation."
             echo "new_version=" >> $GITHUB_ENV
@@ -75,30 +71,29 @@ jobs:
           git config --global user.email "manishabheemanpally@gmail.com"
           git config --global user.name "manishabheemanpally"
 
-          # Construct and validate the remote URL
+          # Properly construct the remote URL
           REMOTE_URL="https://x-access-token:${{ secrets.MY_SECRET_KEYS }}@github.com/manishabheemanpally/deployrepo.git"
 
-          # Validate and clean the URL to remove any unexpected characters
-          CLEANED_REMOTE_URL=$(echo "$REMOTE_URL" | sed 's/[[:space:]]//g')
+          # Trim whitespace and ensure the URL has no newlines
+          CLEANED_REMOTE_URL=$(echo "$REMOTE_URL" | tr -d '\n\r' | sed 's/[[:space:]]//g')
+
           echo "Using remote URL: $CLEANED_REMOTE_URL"
 
-          # Set up the remote
+          # Configure the target repository
           echo "Setting up target repository remote"
           git remote add target_repo "$CLEANED_REMOTE_URL" || git remote set-url target_repo "$CLEANED_REMOTE_URL"
 
-          # Verify remotes
           git remote -v
 
           echo "Fetching from target repository"
           git fetch target_repo || { echo 'Fetch failed'; exit 1; }
 
-          # Ensure the target branch exists or create it
           if git ls-remote --heads target_repo mainbranch | grep -q "refs/heads/mainbranch"; then
-            echo "Branch mainbranch exists. Checking out."
+            echo "Checking out existing branch mainbranch"
             git checkout mainbranch || { echo 'Checkout failed'; exit 1; }
             git pull target_repo mainbranch || { echo 'Pull failed'; exit 1; }
           else
-            echo "Branch mainbranch does not exist. Creating new branch."
+            echo "Creating new branch mainbranch"
             git checkout -b mainbranch || { echo 'Branch creation failed'; exit 1; }
           fi
 
