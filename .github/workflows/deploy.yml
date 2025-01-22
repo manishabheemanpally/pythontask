@@ -33,14 +33,18 @@ jobs:
           git config --global user.email "manishabheemanpally@gmail.com"
           git config --global user.name "manishabheemanpally"
 
+          # Fetch tags from the remote repository
           git fetch --tags
 
+          # Get the current version tag
           current_version=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
           echo "Current version: $current_version"
 
+          # Calculate the new version tag
           new_version=$(echo $current_version | awk -F. -v OFS=. '{$NF++;print}')
           echo "New version: $new_version"
 
+          # Check if the new version tag already exists in the remote repository
           if git rev-parse "refs/tags/$new_version" >/dev/null 2>&1; then
             echo "Tag $new_version already exists. Skipping tag creation."
             echo "new_version=" >> $GITHUB_ENV
@@ -71,10 +75,8 @@ jobs:
           git config --global user.email "manishabheemanpally@gmail.com"
           git config --global user.name "manishabheemanpally"
 
-          # Properly construct the remote URL
+          # Construct the remote URL safely
           REMOTE_URL="https://x-access-token:${{ secrets.MY_SECRET_KEYS }}@github.com/manishabheemanpally/deployrepo.git"
-
-          # Trim whitespace and ensure the URL has no newlines
           CLEANED_REMOTE_URL=$(echo "$REMOTE_URL" | tr -d '\n\r' | sed 's/[[:space:]]//g')
 
           echo "Using remote URL: $CLEANED_REMOTE_URL"
@@ -88,6 +90,7 @@ jobs:
           echo "Fetching from target repository"
           git fetch target_repo || { echo 'Fetch failed'; exit 1; }
 
+          # Check and checkout the target branch
           if git ls-remote --heads target_repo mainbranch | grep -q "refs/heads/mainbranch"; then
             echo "Checking out existing branch mainbranch"
             git checkout mainbranch || { echo 'Checkout failed'; exit 1; }
@@ -97,8 +100,11 @@ jobs:
             git checkout -b mainbranch || { echo 'Branch creation failed'; exit 1; }
           fi
 
+          # Merge changes from main branch
           echo "Merging changes from origin/main"
-          git merge origin/main --no-ff --no-edit || { echo 'Merge failed'; exit 1; }
+          git merge origin/main --no-ff --no-edit --allow-unrelated-histories || { echo 'Merge failed'; exit 1; }
 
+          # Push changes to the target repository
           echo "Pushing changes to target repository"
           git push target_repo mainbranch || { echo 'Push failed'; exit 1; }
+
