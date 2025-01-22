@@ -58,7 +58,7 @@ jobs:
 
       - name: Deploy to another repository
         env:
-          GH_PAT: ${{ secrets.MY_SECRET_KEY }}
+          GH_PAT: ${{ secrets.MY_SECRET_TOKEN }}
         run: |
           git config --global user.email "manishabheemanpally@gmail.com"
           git config --global user.name "manishabheemanpally"
