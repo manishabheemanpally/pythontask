@@ -103,4 +103,3 @@ jobs:
           # Push changes to the target repository
           echo "Pushing changes to target repository"
           git push target_repo mainbranch || { echo 'Push failed'; exit 1; }
-
