@@ -8,6 +8,9 @@ on:
     branches:
       - main
 
+permissions:
+  contents: write  # Give write access to the repository contents
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -51,7 +54,6 @@ jobs:
           else
             git tag $new_version
             echo "new_version=$new_version" >> $GITHUB_ENV
-          fi
 
       - name: Push new version tag
         if: env.new_version != ''
@@ -79,12 +81,9 @@ jobs:
         run: |
           set -e  # Exit immediately if any command fails
 
-          # Remove newlines and spaces from the GitHub token
-          CLEAN_TOKEN=$(echo "${{ secrets.GITHUB_TOKEN }}" | tr -d '\n' | tr -d '\r')
-
           # Construct the remote URL
-          REMOTE_URL="https://x-access-token:${CLEAN_TOKEN}@github.com/manishabheemanpally/deployrepo.git"
-          echo "Using sanitized remote URL: $REMOTE_URL"
+          REMOTE_URL="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/manishabheemanpally/deployrepo.git"
+          echo "Using remote URL: $REMOTE_URL"
 
           # Add the target repository as a remote
           echo "Setting up target repository remote"
