@@ -51,7 +51,8 @@ jobs:
           else
             git tag $new_version
             echo "new_version=$new_version" >> $GITHUB_ENV
-          
+          fi
+
       - name: Push new version tag
         if: env.new_version != ''
         env:
