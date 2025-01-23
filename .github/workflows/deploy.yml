@@ -51,14 +51,13 @@ jobs:
           else
             git tag $new_version
             echo "new_version=$new_version" >> $GITHUB_ENV
-          fi
-
+          
       - name: Push new version tag
         if: env.new_version != ''
         env:
-          GH_PAT: ${{ secrets.MY_SECRET }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git push https://x-access-token:${{ secrets.MY_SECRET }}@github.com/manishabheemanpally/pythontask.git ${{ env.new_version }}
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/manishabheemanpally/pythontask.git ${{ env.new_version }}
 
   deploy:
     needs: build
@@ -75,12 +74,12 @@ jobs:
 
       - name: Deploy to another repository
         env:
-          GH_PAT: ${{ secrets.MY_SECRET }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -e  # Exit immediately if any command fails
 
           # Remove newlines and spaces from the GitHub token
-          CLEAN_TOKEN=$(echo "${{ secrets.MY_SECRET }}" | tr -d '\n' | tr -d '\r')
+          CLEAN_TOKEN=$(echo "${{ secrets.GITHUB_TOKEN }}" | tr -d '\n' | tr -d '\r')
 
           # Construct the remote URL
           REMOTE_URL="https://x-access-token:${CLEAN_TOKEN}@github.com/manishabheemanpally/deployrepo.git"
