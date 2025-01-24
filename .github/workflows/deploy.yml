@@ -8,19 +8,16 @@ on:
     branches:
       - main
 
-permissions:
-  contents: write  # Give write access to the repository contents
-
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v2
         with:
           python-version: '3.x'
 
@@ -30,23 +27,39 @@ jobs:
       - name: Run tests
         run: pytest
 
+      - name: Generate GitHub App JWT
+        id: generate_jwt
+        run: |
+          echo "${{ secrets.GITHUB_APP_PRIVATE_KEY }}" > private-key.pem
+          jwt=$(npx @octokit/auth-app create-jwt --app-id ${{ secrets.GITHUB_APP_ID }} --private-key-file private-key.pem)
+          echo "jwt=${jwt}" >> $GITHUB_ENV
+
+      - name: Get installation access token
+        id: get_installation_token
+        run: |
+          token=$(curl -X POST \
+            -H "Authorization: Bearer ${{ env.jwt }}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/app/installations/${{ secrets.GITHUB_APP_INSTALLATION_ID }}/access_tokens)
+          echo "token=$(echo $token | jq -r .token)" >> $GITHUB_ENV
+
       - name: Bump version and push tag
         id: version
         run: |
           git config --global user.email "manishabheemanpally@gmail.com"
           git config --global user.name "manishabheemanpally"
- 
+
           # Fetch tags from the remote repository
           git fetch --tags
- 
+
           # Get the current version tag
           current_version=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
           echo "Current version: $current_version"
- 
+
           # Calculate the new version tag
           new_version=$(echo $current_version | awk -F. -v OFS=. '{$NF++;print}')
           echo "New version: $new_version"
- 
+
           # Check if the new version tag already exists in the remote repository
           if git rev-parse "refs/tags/$new_version" >/dev/null 2>&1; then
             echo "Tag $new_version already exists. Skipping tag creation."
@@ -54,35 +67,33 @@ jobs:
           else
             git tag $new_version
             echo "new_version=$new_version" >> $GITHUB_ENV
-          fi
- 
+
       - name: Push new version tag
         if: env.new_version != ''
         env:
-          GH_PAT: ${{ secrets.MY_SECRET_TOKEN }}
+          GITHUB_TOKEN: ${{ env.token }}
         run: |
-          git push https://x-access-token:${{ secrets.MY_SECRET_TOKEN }}@github.com/manishabheemanpally/pythontask.git ${{ env.new_version }}
+          git push https://x-access-token:${{ env.token }}@github.com/manishabheemanpally/pythontask.git ${{ env.new_version }}
+
   deploy:
     needs: build
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Set up Git
-        run: |
-          git config --global user.email "manishabheemanpally@gmail.com"
-          git config --global user.name "manishabheemanpally"
+        uses: actions/checkout@v2
 
       - name: Deploy to another repository
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ env.token }}
         run: |
           set -e  # Exit immediately if any command fails
 
+          git config --global user.email "manishabheemanpally@gmail.com"
+          git config --global user.name "manishabheemanpally"
+
           # Construct the remote URL
-          REMOTE_URL="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/manishabheemanpally/deployrepo.git"
+          REMOTE_URL="https://x-access-token:${{ env.token }}@github.com/manishabheemanpally/deployrepo.git"
           echo "Using remote URL: $REMOTE_URL"
 
           # Add the target repository as a remote
@@ -94,12 +105,10 @@ jobs:
           echo "Fetching from target repository"
           git fetch target_repo || { echo 'Fetch failed'; exit 1; }
 
-          # Check if the branch exists in the target repository
-          if git ls-remote --heads target_repo mainbranch | grep -q "refs/heads/mainbranch"; then
-            echo "Checking out existing branch mainbranch"
+          # Ensure the target branch exists
+          if git show-ref --quiet refs/heads/mainbranch; then
             git checkout mainbranch
           else
-            echo "Creating new branch mainbranch"
             git checkout -b mainbranch
           fi
 
