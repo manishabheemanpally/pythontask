@@ -49,18 +49,18 @@ jobs:
         run: |
           git config --global user.email "manishabheemanpally@gmail.com"
           git config --global user.name "manishabheemanpally"
-
+ 
           # Fetch tags from the remote repository
           git fetch --tags
-
+ 
           # Get the current version tag
           current_version=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
           echo "Current version: $current_version"
-
+ 
           # Calculate the new version tag
           new_version=$(echo $current_version | awk -F. -v OFS=. '{$NF++;print}')
           echo "New version: $new_version"
-
+ 
           # Check if the new version tag already exists in the remote repository
           if git rev-parse "refs/tags/$new_version" >/dev/null 2>&1; then
             echo "Tag $new_version already exists. Skipping tag creation."
@@ -68,6 +68,8 @@ jobs:
           else
             git tag $new_version
             echo "new_version=$new_version" >> $GITHUB_ENV
+          fi
+ 
 
       - name: Push new version tag
         if: env.new_version != ''
