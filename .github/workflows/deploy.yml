@@ -20,8 +20,8 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: '14'
-      
-      - name: Install @octokit/auth-app package
+
+      - name: Install dependencies for generating JWT
         run: npm install @octokit/auth-app
 
       - name: Generate GitHub App JWT
