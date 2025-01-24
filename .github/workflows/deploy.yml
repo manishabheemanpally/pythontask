@@ -28,17 +28,21 @@ jobs:
         id: generate_jwt
         run: |
           echo "${{ secrets.GITHUB_APP_PRIVATE_KEY }}" > private-key.pem
-          jwt=$(npx @octokit/auth-app create-jwt --app-id ${{ secrets.GITHUB_APP_ID }} --private-key-file private-key.pem)
-          echo "jwt=${jwt}" >> $GITHUB_ENV
-
-      - name: Get installation access token
-        id: get_installation_token
-        run: |
-          token=$(curl -X POST \
-            -H "Authorization: Bearer ${{ env.jwt }}" \
-            -H "Accept: application/vnd.github+json" \
-            https://api.github.com/app/installations/${{ secrets.GITHUB_APP_INSTALLATION_ID }}/access_tokens)
-          echo "token=$(echo $token | jq -r .token)" >> $GITHUB_ENV
+          node -e "
+            const { createAppAuth } = require('@octokit/auth-app');
+            const auth = createAppAuth({
+              appId: process.env.GITHUB_APP_ID,
+              privateKey: require('fs').readFileSync('private-key.pem', 'utf8'),
+              installationId: process.env.GITHUB_APP_INSTALLATION_ID
+            });
+            auth({ type: 'installation' }).then(result => {
+              console.log(`token=${result.token}`);
+            }).catch(err => {
+              console.error(err);
+              process.exit(1);
+            });
+          " | tee token.txt
+          echo "token=$(grep 'token=' token.txt | cut -d'=' -f2)" >> $GITHUB_ENV
 
       - name: Bump version and push tag
         id: version
